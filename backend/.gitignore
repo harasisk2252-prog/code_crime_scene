@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+.DS_Store
+backend/src/data/*.json
+!backend/src/data/.gitkeep
