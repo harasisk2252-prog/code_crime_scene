@@ -7,11 +7,25 @@ import Topbar from "./components/Topbar.jsx";
 import CaseCard from "./components/CaseCard.jsx";
 import { CASES } from "./data/cases.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const iconByCategory = {JavaScript:Code2,Databases:Database,Networking:Network,Performance:Gauge,Concurrency:Activity,Deployment:Globe2};
 const defaultProgress = { xp: 0, solvedCases: [], attempts: {}, hintsUsed: {}, lastSolvedDate: null };
 function readProgress(){ try{return {...defaultProgress,...JSON.parse(localStorage.getItem("ccs-progress")||"{}")}}catch{return {...defaultProgress}} }
-function saveProgress(p){localStorage.setItem("ccs-progress",JSON.stringify(p)); fetch(`${API}/progress/local-detective`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)}).catch(()=>{});}
+function progressUrl(){
+ let key=localStorage.getItem("ccs-detective-key");
+ if(!key){key=crypto.randomUUID();localStorage.setItem("ccs-detective-key",key)}
+ return `${API}/progress/${key}`;
+}
+let saveQueue=Promise.resolve();
+function saveProgress(p){
+ localStorage.setItem("ccs-progress",JSON.stringify(p));
+ const request=saveQueue.catch(()=>{}).then(async()=>{
+  const response=await fetch(progressUrl(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+  if(!response.ok)throw new Error("Progress sync failed");
+ });
+ saveQueue=request;
+ return request;
+}
 function rankFor(xp){if(xp>=700)return "Chief Investigator";if(xp>=400)return "Senior Detective";if(xp>=180)return "Detective";return "Junior Detective";}
 function App(){
  const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
@@ -19,9 +33,21 @@ function App(){
  const [user,setUserState]=useState(()=>{try{return {...JSON.parse(localStorage.getItem("ccs-user")||'{"username":"Detective","email":"detective@demo.local"}'),showProfile:false}}catch{return {username:"Detective",email:"detective@demo.local",showProfile:false}}});
  const setUser=(u)=>{setUserState(u);localStorage.setItem("ccs-user",JSON.stringify({username:u.username,email:u.email}));};
  const [toast,setToast]=useState("");
- useEffect(()=>{saveProgress(progress)},[]);
+ useEffect(()=>{
+ let active=true;
+ fetch(progressUrl()).then(response=>{if(!response.ok)throw new Error("Progress sync failed");return response.json()}).then(remote=>{
+  if(!active)return;
+  setProgress(current=>{
+   const solvedCases=CASES.filter(c=>current.solvedCases.includes(c.id)||(remote.solvedCases||[]).includes(c.id)).map(c=>c.id);
+   const next={...defaultProgress,...remote,...current,solvedCases,xp:CASES.filter(c=>solvedCases.includes(c.id)).reduce((sum,c)=>sum+c.xp,0),attempts:{...remote.attempts,...current.attempts},hintsUsed:{...remote.hintsUsed,...current.hintsUsed},lastSolvedDate:[remote.lastSolvedDate,current.lastSolvedDate].filter(Boolean).sort().at(-1)||null};
+   saveProgress(next).catch(()=>setToast("Progress is saved in this browser; server sync is unavailable."));
+   return next;
+  });
+ }).catch(()=>{if(active)setToast("Progress is saved in this browser; server sync is unavailable.")});
+ return()=>{active=false};
+ },[]);
  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(""),3000);return()=>clearTimeout(t)},[toast]);
- const updateProgress=(next)=>{setProgress(next);saveProgress(next)};
+ const updateProgress=(next)=>{setProgress(next);saveProgress(next).catch(()=>setToast("Progress is saved in this browser; server sync is unavailable."))};
  const solved=progress.solvedCases.length;
  return <div className="app-shell"><Sidebar collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} closeMobile={()=>setMobileOpen(false)}/><div className={`main-shell ${collapsed?"wide":""}`}><Topbar user={user} setUser={setUser} onMenu={()=>setMobileOpen(true)}/><main className="page-content">
  <Routes>
