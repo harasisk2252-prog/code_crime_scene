@@ -47,6 +47,23 @@ Restart the backend. If MongoDB cannot connect, the API automatically continues 
 - `npm run dev` in `frontend`: start Vite
 - `npm run build` in `frontend`: production build
 
+## Netlify deployment
+The root `netlify.toml` configures Netlify to install dependencies in `frontend`,
+run `npm ci --include=dev && npm run build`, and publish `frontend/dist`. The
+explicit install uses the lockfile and ensures Vite is available even when a
+CLI deploy has not run a dependency installation phase. These repository settings
+override the previous dashboard build command (`npm run dev`); a root
+`package.json` is not required. The committed `frontend/package-lock.json`
+provides the frontend dependency lockfile.
+
+The configuration also serves `index.html` for client-side routes so opening or
+refreshing URLs such as `/cases` works after deployment.
+
+This deploy hosts the frontend only. The Express backend requires separate
+hosting; set `VITE_API_URL` to its public HTTPS API URL (including `/api`) in
+Netlify before building if remote progress syncing is needed. Without a hosted
+API, progress remains saved in the browser and remote sync requests fail.
+
 ## Project structure
 ```text
 code-crime-scene/
