@@ -47,6 +47,7 @@ Restart the backend. If MongoDB cannot connect, the API automatically continues 
 - `npm run dev` in `frontend`: start Vite
 - `npm run build` in `frontend`: production build
 
+
 ## Project structure
 ```text
 code-crime-scene/
