@@ -11,7 +11,7 @@ import { CASES } from "./data/cases.js";
 import { assessExplanation, runCaseTestsAsync } from "./data/caseEngine.js";
 import { assessStructuredReport, buildCaseReport, simulateAiRetrieval, simulateBankHeist } from "./data/investigationEngine.js";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = import.meta.env.VITE_API_URL || "https://code-crime-scene-api.vercel.app/api";
 const iconByCategory = {JavaScript:Code2,Databases:Database,Networking:Network,Performance:Gauge,Concurrency:Activity,Deployment:Globe2};
 const CASE_PROGRESS_VERSION = 2;
 const defaultProgress = { xp: 0, solvedCases: [], legacySolvedCases: [], caseVersions: {}, attempts: {}, hintsUsed: {}, lastSolvedDate: null };
