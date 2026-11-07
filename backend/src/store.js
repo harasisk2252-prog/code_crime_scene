@@ -21,11 +21,8 @@ async function writeData(data) {
 }
 
 export async function getCases() {
-  if (mongoReady) {
-    const count = await CaseModel.countDocuments();
-    if (!count) await CaseModel.insertMany(cases);
-    return await CaseModel.find({}, { _id: 0, __v: 0 }).lean();
-  }
+  // Catalog content is source controlled. Mongo remains available for
+  // existing user data, but an old seeded collection must not hide new cases.
   return cases;
 }
 export async function getCase(id) {

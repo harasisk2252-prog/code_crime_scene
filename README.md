@@ -60,3 +60,15 @@ code-crime-scene/
 - This is an educational prototype. Passwords and submitted fixes are not used to execute untrusted code.
 - Demo authentication is intentionally lightweight for a local prototype. Before public deployment, use production-grade session/token handling, rate limiting, secure cookie settings, validation, and security review.
 - Keep `.env` private. Commit `.env.example`, never `.env`.
+
+## Cinematic experience update
+The existing six-case application is retained. `/` is the cinematic entrance; `/headquarters` opens the original dashboard. Includes original-code demo replays, persistent per-case notebooks, difficulty filters, TRACE progressive hints, reduced-motion support, and hint-adjusted XP. A pre-change source backup is kept in `backup-before-cinematic-*`.
+
+### Validation boundaries
+Repairs use a conservative static reference comparison (whitespace and line comments ignored); alternative valid implementations may require manual review. The explanation check requires text, not semantic AI evaluation. Traces are authored walkthroughs of original code, never execution of editor contents. TRACE is rule-based and needs no API key. No real runtime test service is configured.
+
+### Persistence and API
+Browser progress uses the existing `ccs-progress` key; notes use `ccs-note-<case ID>`. Optional `VITE_API_URL=https://your-api.example/api` enables the existing Express progress endpoint. Without this setting the frontend is standalone and makes no localhost API calls. Backend progress remains a demo mirror under `local-detective`, not authenticated cross-device synchronization. Do not use this shared key for private multi-user accounts.
+
+### Production / Netlify
+Run `npm ci` then `npm run build` inside `frontend`. Deploy this same repository to the existing Netlify site with base `frontend`, build command `npm run build`, and publish directory `dist`. Root `netlify.toml` and `frontend/public/_redirects` configure builds and SPA deep links. Express must be hosted separately if enabled; Netlify static hosting does not run `backend/src/server.js`. Frontend Vite environment values are public: never store secrets in them. No new dependencies were required.

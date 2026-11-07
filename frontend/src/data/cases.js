@@ -1,4 +1,6 @@
-export const CASES = [
+import { ADVANCED_CASES } from './advancedCases.js';
+
+const BASE_CASES = [
   {
     "id": "CCS-001",
     "title": "The Login Disaster",
@@ -121,7 +123,7 @@ export const CASES = [
     "id": "CCS-003",
     "title": "The Network Blackout",
     "category": "Networking",
-    "difficulty": "Detective",
+    "difficulty": "Investigator",
     "duration": "12 min",
     "xp": 160,
     "accent": "blue",
@@ -180,7 +182,7 @@ export const CASES = [
     "id": "CCS-004",
     "title": "The Memory That Never Leaves",
     "category": "Performance",
-    "difficulty": "Detective",
+    "difficulty": "Investigator",
     "duration": "14 min",
     "xp": 180,
     "accent": "purple",
@@ -191,7 +193,7 @@ export const CASES = [
       {
         "type": "CODE",
         "title": "dashboard.js",
-        "content": "function mountDashboard() {\n  window.addEventListener('resize', updateLayout);\n  renderDashboard();\n}",
+        "content": "function mountDashboard() {\n  const onResize = () => updateLayout();\n  window.addEventListener('resize', onResize);\n  renderDashboard();\n}",
         "detail": "Every call adds another listener. Look for a matching cleanup path."
       },
       {
@@ -227,8 +229,8 @@ export const CASES = [
     "diagnosis": "The component adds a resize event listener on each mount but never removes it.",
     "solution": "Return a cleanup function or remove the same handler when the dashboard unmounts.",
     "lesson": "Resources with a lifecycle—event listeners, timers, subscriptions—need cleanup. A leak can be caused by retaining references, not only by allocating huge objects.",
-    "starterCode": "function mountDashboard() {\n  window.addEventListener('resize', updateLayout);\n  renderDashboard();\n}",
-    "fixedCode": "function mountDashboard() {\n  window.addEventListener('resize', updateLayout);\n  renderDashboard();\n  return function cleanup() {\n    window.removeEventListener('resize', updateLayout);\n  };\n}",
+    "starterCode": "function mountDashboard() {\n  const onResize = () => updateLayout();\n  window.addEventListener('resize', onResize);\n  renderDashboard();\n}",
+    "fixedCode": "function mountDashboard() {\n  const onResize = () => updateLayout();\n  window.addEventListener('resize', onResize);\n  renderDashboard();\n  return function cleanup() {\n    window.removeEventListener('resize', onResize);\n  };\n}",
     "testLabels": [
       "One active listener after mount",
       "Listener removed during cleanup",
@@ -244,7 +246,7 @@ export const CASES = [
     "xp": 220,
     "accent": "rose",
     "summary": "Two requests spend the same balance at almost exactly the same time.",
-    "incident": "A wallet starts with 100 credits. Two purchase requests each spend 80 credits. Both succeed, leaving an impossible balance of -60.",
+    "incident": "A wallet starts with 100 credits. Two purchase requests each spend 80 credits. Both succeed, charging 160 credits while the recorded balance is 20.",
     "environment": "Concurrency · Shared state · Transactions",
     "evidence": [
       {
@@ -298,7 +300,7 @@ export const CASES = [
     "id": "CCS-006",
     "title": "The Broken Launch",
     "category": "Deployment",
-    "difficulty": "Detective",
+    "difficulty": "Investigator",
     "duration": "11 min",
     "xp": 170,
     "accent": "green",
@@ -354,3 +356,55 @@ export const CASES = [
     ]
   }
 ];
+
+// Keep the established case slots and all UI-compatible fields while replacing
+// their missions with the more investigative scenarios.
+// Original case IDs remain stable so existing browser progress and notes stay valid.
+const enrichReferenceCase = item => item.id === 'CCS-101' ? {
+  ...item,
+  repairControls: [
+    { id: 'idempotency', label: 'Claim the idempotency key before posting the debit' },
+    { id: 'atomic', label: 'Perform the balance check and debit atomically' }
+  ],
+  diagnosisRubric: {
+    fault: 'missing-idempotency', mechanism: 'duplicate-race', evidence: [0, 2], repair: 'atomic-idempotency',
+    prompts: {
+      fault: ['Choose the underlying fault', 'missing-idempotency', 'display-error', 'network-outage'],
+      mechanism: ['Choose how it caused the incident', 'duplicate-race', 'stale-dashboard', 'invalid-login'],
+      repair: ['Choose how the repair addresses it', 'atomic-idempotency', 'hide-the-button', 'retry-later']
+    }
+  }
+} : item.id === 'CCS-102' ? {
+  ...item,
+  diagnosisRubric: {
+    fault: 'mutually-exclusive-filter', mechanism: 'empty-result-set', evidence: [0, 1], repair: 'select-published-only',
+    prompts: {
+      fault: ['Choose the underlying fault', 'mutually-exclusive-filter', 'deleted-table', 'browser-cache'],
+      mechanism: ['Choose how it caused the incident', 'empty-result-set', 'network-timeout', 'permission-denied'],
+      repair: ['Choose how the repair addresses it', 'select-published-only', 'add-more-columns', 'restart-the-server']
+    }
+  }
+} : item.id === 'CCS-103' ? {
+  ...item,
+  repairControls: [
+    { id: 'officialOnly', label: 'Filter retrieval to official sources' },
+    { id: 'latestFirst', label: 'Rank eligible sources by newest publication date' },
+    { id: 'citation', label: 'Return the selected source as a citation' },
+    { id: 'safeUnknown', label: 'Return unknown when no official source exists' }
+  ],
+  diagnosisRubric: {
+    fault: 'outdated-context-priority', mechanism: 'incorrect-answer', evidence: [0, 1], repair: 'rank-official-current',
+    prompts: {
+      fault: ['Choose the underlying fault', 'outdated-context-priority', 'model-hallucination', 'slow-network'],
+      mechanism: ['Choose how it caused the incident', 'incorrect-answer', 'empty-screen', 'database-lock'],
+      repair: ['Choose how the repair addresses it', 'rank-official-current', 'increase-token-limit', 'hide-the-chat']
+    }
+  }
+} : item;
+
+const withTrace = item => ({
+  ...item,
+  trace: item.trace || [[1, `symptom: ${item.summary}`, 'Observe the incident signal.'], [2, `fault: ${item.starterCode}`, 'Locate the first incorrect state.'], [3, `expected: ${item.testLabels?.[0] || 'safe behavior'}`, 'Verify the repair with the controlled fixture.']]
+});
+
+export const CASES = [...BASE_CASES, ...ADVANCED_CASES].map(enrichReferenceCase).map(withTrace);

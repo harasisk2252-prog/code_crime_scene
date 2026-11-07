@@ -7,7 +7,18 @@ import { setMongoReady } from "./store.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 5000);
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://codecrimescene.netlify.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175"
+];
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Origin is not allowed by Code Crime Scene API."));
+  }
+}));
 app.use(express.json({ limit: "100kb" }));
 app.use("/api", api);
 app.get("/", (_req, res) => res.json({ name: "Code Crime Scene API", docs: "/api/health" }));
@@ -24,4 +35,8 @@ if (process.env.MONGODB_URI) {
   console.log("MONGODB_URI not set; using local JSON demo mode.");
 }
 
-app.listen(PORT, () => console.log(`Code Crime Scene API listening on http://localhost:${PORT}`));
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Code Crime Scene API listening on http://localhost:${PORT}`));
+}
+
+export default app;
